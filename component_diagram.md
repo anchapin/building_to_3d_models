@@ -1,0 +1,69 @@
+# Building-to-3D Conversion Application Component Diagram
+
+```
++---------------------+     +------------------------+     +------------------------+     +---------------------+
+|                     |     |                        |     |                        |     |                     |
+|  Frontend Interface |     |  Image Processing      |     |  3D Reconstruction     |     |  gbXML Conversion   |
+|                     |     |  Module                |     |  Module                |     |  Module             |
+|  +---------------+  |     |  +------------------+  |     |  +------------------+  |     |  +---------------+  |
+|  | User Input    |  |     |  | PDF to Vector    |  |     |  | Floor Plan       |  |     |  | Building      |  |
+|  | Module        |  |     |  | Converter        |  |     |  | Processor        |  |     |  | Element       |  |
+|  +---------------+  |     |  +------------------+  |     |  +------------------+  |     |  | Mapper        |  |
+|                     |     |                        |     |                        |     |  +---------------+  |
+|  +---------------+  |     |  +------------------+  |     |  +------------------+  |     |                     |
+|  | Scale         |  |     |  | Edge Detection   |  |     |  | Elevation        |  |     |  +---------------+  |
+|  | Configuration |  |     |  | Engine           |  |     |  | Processor        |  |     |  | Thermal       |  |
+|  +---------------+  |     |  +------------------+  |     |  +------------------+  |     |  | Property      |  |
+|                     |     |                        |     |                        |     |  | Assigner      |  |
+|  +---------------+  |     |  +------------------+  |     |  +------------------+  |     |  +---------------+  |
+|  | Visualization |  |     |  | Feature          |  |     |  | Geometry         |  |     |                     |
+|  | Component     |  |     |  | Extraction       |  |     |  | Generator        |  |     |  +---------------+  |
+|  +---------------+  |     |  | System           |  |     |  +------------------+  |     |  | XML           |  |
+|                     |     |  +------------------+  |     |                        |     |  | Generator     |  |
+|  +---------------+  |     |                        |     |  +------------------+  |     |  +---------------+  |
+|  | Export        |  |     |  +------------------+  |     |  | Spatial          |  |     |                     |
+|  | Interface     |  |     |  | Scale Conversion |  |     |  | Relationship     |  |     |  +---------------+  |
+|  +---------------+  |     |  | Utility          |  |     |  | Manager          |  |     |  | Validation    |  |
+|                     |     |  +------------------+  |     |  +------------------+  |     |  | System        |  |
++---------------------+     +------------------------+     +------------------------+     |  +---------------+  |
+         ^                             ^                             ^                    +---------------------+
+         |                             |                             |                              ^
+         |                             |                             |                              |
+         v                             v                             v                              v
++-------------------------------------------------------------------------------------------+
+|                                                                                           |
+|                                    Data Flow                                              |
+|                                                                                           |
+|  +----------------+     +----------------+     +----------------+     +----------------+  |
+|  |                |     |                |     |                |     |                |  |
+|  |  Input Stage   | --> | Processing     | --> | Reconstruction | --> | Output Stage   |  |
+|  |                |     | Stage          |     | Stage          |     |                |  |
+|  +----------------+     +----------------+     +----------------+     +----------------+  |
+|                                                                                           |
++-------------------------------------------------------------------------------------------+
+```
+
+## Data Flow Details
+
+### Input Stage
+- User uploads building elevation images (minimum 4 for cardinal directions)
+- User uploads floor plan images (one per building level)
+- User specifies scale indicators on each image
+
+### Processing Stage
+- Images are converted from PDF to vector format if necessary
+- Edge detection and feature extraction identify architectural elements
+- Scale conversion transforms pixel measurements to real-world units
+
+### Reconstruction Stage
+- Floor plans provide X-Y coordinates and room layouts
+- Elevations provide Z coordinates and vertical features
+- 3D geometry is generated by combining floor plan and elevation data
+- Spatial relationships ensure proper connections between elements
+
+### Output Stage
+- 3D model is displayed for user verification
+- Building elements are mapped to gbXML components
+- Default thermal properties are assigned
+- gbXML file is generated and validated
+- User can download the gbXML file for use in energy modeling software
