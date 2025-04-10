@@ -1,6 +1,6 @@
 import os
 import json
-from gbxml_converter import GbXMLConverter
+from gbxml.gbxml_converter import GbXMLConverter
 
 class GbXMLManager:
     """

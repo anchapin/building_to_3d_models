@@ -1,10 +1,11 @@
 import os
 import numpy as np
 import cv2
-from pdf_to_vector import PDFToVectorConverter
-from edge_detector import EdgeDetector
-from feature_extractor import FeatureExtractor
-from scale_converter import ScaleConverter
+from skimage import measure
+from image_processing.pdf_to_vector import PDFToVectorConverter
+from image_processing.edge_detector import EdgeDetector
+from image_processing.feature_extractor import FeatureExtractor
+from image_processing.scale_converter import ScaleConverter
 
 class ImageProcessor:
     """

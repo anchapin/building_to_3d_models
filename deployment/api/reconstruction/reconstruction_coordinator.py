@@ -2,7 +2,7 @@ import os
 import numpy as np
 import json
 import trimesh
-from building_reconstructor import BuildingReconstructor
+from reconstruction.building_reconstructor import BuildingReconstructor
 
 class ReconstructionCoordinator:
     """
