@@ -444,5 +444,236 @@ class BuildingReconstructor:
         
         # Add roof
         roof_mesh = self._create_roof_mesh(building_model['roof'], building_model['floors'])
-        if roof
-(Content truncated due to size limit. Use line ranges to read in chunks)
+        if roof_mesh:
+            scene.add_geometry(roof_mesh)
+        
+        # Export as a single mesh
+        mesh = scene.dump(concatenate=True)
+        
+        return mesh
+    
+    def _create_wall_mesh(self, wall):
+        """
+        Create a mesh for a wall.
+        
+        Args:
+            wall: Wall data
+            
+        Returns:
+            trimesh.Trimesh: Wall mesh
+        """
+        points = wall.get('points', [])
+        if len(points) < 2:
+            return None
+            
+        height = wall.get('height', 3.0)
+        base_height = wall.get('base_height', 0.0)
+        thickness = wall.get('thickness', 0.2)
+        
+        # Create a path for the wall
+        path = np.array(points)
+        
+        # Create a rectangular cross-section
+        # The cross-section is perpendicular to the path
+        cross_section = np.array([
+            [-thickness/2, 0],
+            [thickness/2, 0],
+            [thickness/2, height],
+            [-thickness/2, height]
+        ])
+        
+        try:
+            # Create the wall mesh by extruding the cross-section along the path
+            wall_mesh = trimesh.creation.extrude_polygon(
+                cross_section=cross_section,
+                polygon=path
+            )
+            
+            # Translate to the correct base height
+            wall_mesh.apply_translation([0, 0, base_height])
+            
+            return wall_mesh
+        except Exception:
+            # Fallback: create a box for each wall segment
+            meshes = []
+            
+            for i in range(len(points) - 1):
+                p1 = points[i]
+                p2 = points[i + 1]
+                
+                # Calculate wall length and direction
+                dx = p2[0] - p1[0]
+                dy = p2[1] - p1[1]
+                length = np.sqrt(dx*dx + dy*dy)
+                
+                if length > 0:
+                    # Create a box for this wall segment
+                    box = trimesh.creation.box(
+                        extents=[length, thickness, height]
+                    )
+                    
+                    # Rotate to align with wall direction
+                    angle = np.arctan2(dy, dx)
+                    rotation = trimesh.transformations.rotation_matrix(
+                        angle, [0, 0, 1]
+                    )
+                    box.apply_transform(rotation)
+                    
+                    # Translate to the correct position
+                    translation = [p1[0], p1[1], base_height]
+                    box.apply_translation(translation)
+                    
+                    meshes.append(box)
+            
+            if meshes:
+                # Combine all wall segment meshes
+                wall_mesh = trimesh.util.concatenate(meshes)
+                return wall_mesh
+            
+            return None
+    
+    def _create_opening_mesh(self, opening):
+        """
+        Create a mesh for an opening (window or door).
+        
+        Args:
+            opening: Opening data
+            
+        Returns:
+            trimesh.Trimesh: Opening mesh
+        """
+        opening_type = opening.get('type', '')
+        
+        if opening_type == 'window':
+            # Create window mesh
+            position = opening.get('position', (0, 0))
+            width = opening.get('width', 1.0)
+            height = opening.get('height', 1.0)
+            floor = opening.get('floor', 0)
+            
+            # Create a simple box for the window
+            window_mesh = trimesh.creation.box(
+                extents=[width, 0.1, height]  # Thin box
+            )
+            
+            # Translate to the correct position
+            # Assume windows are 1m above floor level
+            window_height = floor * 3.0 + 1.0  # Simple height calculation
+            translation = [position[0], position[1], window_height]
+            window_mesh.apply_translation(translation)
+            
+            return window_mesh
+            
+        elif opening_type == 'door':
+            # Create door mesh
+            door_type = opening.get('door_type', 'standard')
+            
+            if door_type == 'swing':
+                # Swing door
+                position = opening.get('position', (0, 0))
+                radius = opening.get('radius', 0.9)
+                floor = opening.get('floor', 0)
+                
+                # Create a cylinder for the door
+                door_mesh = trimesh.creation.cylinder(
+                    radius=radius,
+                    height=2.0  # Standard door height
+                )
+                
+                # Translate to the correct position
+                door_height = floor * 3.0  # Simple height calculation
+                translation = [position[0], position[1], door_height]
+                door_mesh.apply_translation(translation)
+                
+                return door_mesh
+                
+            else:
+                # Standard door
+                position = opening.get('position', (0, 0))
+                width = opening.get('width', 0.9)
+                height = opening.get('height', 2.0)
+                floor = opening.get('floor', 0)
+                
+                # Create a simple box for the door
+                door_mesh = trimesh.creation.box(
+                    extents=[width, 0.1, height]  # Thin box
+                )
+                
+                # Translate to the correct position
+                door_height = floor * 3.0  # Simple height calculation
+                translation = [position[0], position[1], door_height]
+                door_mesh.apply_translation(translation)
+                
+                return door_mesh
+        
+        return None
+    
+    def _create_roof_mesh(self, roof, floor_heights):
+        """
+        Create a mesh for the roof.
+        
+        Args:
+            roof: Roof data
+            floor_heights: List of floor heights
+            
+        Returns:
+            trimesh.Trimesh: Roof mesh
+        """
+        roof_type = roof.get('type', 'flat')
+        outline = roof.get('outline', [])
+        
+        if not outline:
+            return None
+            
+        # Get the top floor height
+        top_floor_height = floor_heights[0] if floor_heights else 3.0
+        
+        if roof_type == 'flat':
+            # Create a flat roof
+            roof_height = roof.get('height', 0.5)
+            
+            # Get the outline points
+            for wall in outline:
+                points = wall.get('points', [])
+                if points:
+                    # Create a 2D polygon for the roof
+                    polygon = np.array(points)
+                    
+                    try:
+                        # Create the roof mesh by extruding a flat polygon
+                        roof_mesh = trimesh.creation.extrude_polygon(
+                            polygon=polygon,
+                            height=roof_height
+                        )
+                        
+                        # Translate to the top floor height
+                        roof_mesh.apply_translation([0, 0, top_floor_height])
+                        
+                        return roof_mesh
+                    except Exception:
+                        # Fallback: create a simple box
+                        min_x = min(p[0] for p in points)
+                        min_y = min(p[1] for p in points)
+                        max_x = max(p[0] for p in points)
+                        max_y = max(p[1] for p in points)
+                        
+                        width = max_x - min_x
+                        depth = max_y - min_y
+                        
+                        roof_mesh = trimesh.creation.box(
+                            extents=[width, depth, roof_height]
+                        )
+                        
+                        # Translate to the correct position
+                        translation = [
+                            min_x + width/2,
+                            min_y + depth/2,
+                            top_floor_height
+                        ]
+                        roof_mesh.apply_translation(translation)
+                        
+                        return roof_mesh
+        
+        # For other roof types, we would implement specific mesh creation
+        # For now, we'll default to a flat roof
+        return None

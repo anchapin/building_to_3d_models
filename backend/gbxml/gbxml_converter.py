@@ -429,5 +429,72 @@ class GbXMLConverter:
             
             # Add cartesian points
             for point in points:
-                cartesian_point = ET.SubElem
-(Content truncated due to size limit. Use line ranges to read in chunks)
+                cartesian_point = ET.SubElement(polyloop, "CartesianPoint")
+                
+                # Add coordinates
+                coord_x = ET.SubElement(cartesian_point, "Coordinate")
+                coord_x.text = str(point[0])
+                
+                coord_y = ET.SubElement(cartesian_point, "Coordinate")
+                coord_y.text = str(point[1])
+                
+                # Add z-coordinate (0 if not available)
+                coord_z = ET.SubElement(cartesian_point, "Coordinate")
+                coord_z.text = str(point[2] if len(point) > 2 else 0)
+    
+    def _prettify_xml(self, elem):
+        """
+        Return a pretty-printed XML string for the Element.
+        
+        Args:
+            elem: XML Element
+            
+        Returns:
+            str: Pretty-printed XML string
+        """
+        # Convert Element to string
+        rough_string = ET.tostring(elem, 'utf-8')
+        
+        # Parse string with minidom
+        reparsed = minidom.parseString(rough_string)
+        
+        # Return pretty-printed string
+        return reparsed.toprettyxml(indent="  ")
+    
+    def validate_gbxml(self, gbxml_path, schema_path=None):
+        """
+        Validate a gbXML file against the schema.
+        
+        Args:
+            gbxml_path: Path to the gbXML file
+            schema_path: Path to the gbXML schema file
+            
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        try:
+            # Load the gbXML file
+            with open(gbxml_path, 'rb') as f:
+                gbxml_doc = etree.parse(f)
+            
+            # If schema path is provided, validate against it
+            if schema_path:
+                with open(schema_path, 'rb') as f:
+                    schema_doc = etree.parse(f)
+                    schema = etree.XMLSchema(schema_doc)
+                    
+                    # Validate the gbXML document
+                    is_valid = schema.validate(gbxml_doc)
+                    
+                    if not is_valid:
+                        print("Validation errors:")
+                        for error in schema.error_log:
+                            print(f"  Line {error.line}: {error.message}")
+                    
+                    return is_valid
+            
+            # If no schema path is provided, just check if it's well-formed
+            return True
+        except Exception as e:
+            print(f"Error validating gbXML: {e}")
+            return False
