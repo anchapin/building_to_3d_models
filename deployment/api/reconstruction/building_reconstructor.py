@@ -1,7 +1,14 @@
 import os
 import numpy as np
 import trimesh
-import open3d as o3d
+
+# Try to import open3d, but continue if not available
+try:
+    import open3d as o3d
+    OPEN3D_AVAILABLE = True
+except ImportError:
+    OPEN3D_AVAILABLE = False
+    print("Warning: open3d not available, some 3D functionality may be limited")
 
 class BuildingReconstructor:
     """

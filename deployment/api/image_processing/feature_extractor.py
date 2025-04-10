@@ -30,7 +30,7 @@ class FeatureExtractor:
             
         # If no pre-detected elements, detect them now
         if detected_elements is None:
-            from edge_detector import EdgeDetector
+            from image_processing.edge_detector import EdgeDetector
             edge_detector = EdgeDetector()
             detected_elements = edge_detector.detect_architectural_elements(gray)
         

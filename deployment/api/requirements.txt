@@ -5,6 +5,6 @@ numpy
 opencv-python
 lxml
 trimesh
-open3d
 pymupdf
 scikit-image
+pytest
